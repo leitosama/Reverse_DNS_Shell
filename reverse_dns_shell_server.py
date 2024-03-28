@@ -21,15 +21,15 @@ DNSHELL = """
 """
 
 PORT = 53
-NXT_CMD = base64.b64encode("nxt")
+NXT_CMD = base64.b64encode(b"nxt")
 PROMPT = 'SHELL >> '
 #PROMPT_COLORED = '\033[33mSHELL\033[0m \033[35m>> \033[0m'
 BLOCK_SIZE = 32  # Block size for cipher object: must be 16, 24, or 32 for AES
 PADDING = '{'  # Character used for padding
 EXIT = 0 # Used to keep track of 'quit' command
 # REPLACE THIS WITH YOUR OWN KEY AND IV #
-secret = os.environ.get("SECRET","TyKuwAt5vg1m48z2qYs6cUalHQrDpG0B")
-iv = os.environ.get("IV","1cYGbLz8qN4umT4c")
+secret = os.environ.get("SECRET","TyKuwAt5vg1m48z2qYs6cUalHQrDpG0B").encode()
+iv = os.environ.get("IV","1cYGbLz8qN4umT4c").encode()
 
 # one-liner to sufficiently pad the text to be encrypted:
 PAD = lambda s: s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
